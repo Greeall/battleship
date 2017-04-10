@@ -1,7 +1,7 @@
 #pragma once
 #include <stdlib.h> 
 #include <ctime> 
-const int ARRANGE_SHIPS = 0;
+const int ARRANGING_SHIPS = 0;
 const int PLAYING = 1;
 const int EMPTY_CELL = 1;
 const int OCCUPIED_CELL = 0;
@@ -67,6 +67,8 @@ namespace shipbattle {
 
 
 
+
+
 	protected: 
 
 	private:
@@ -109,7 +111,7 @@ namespace shipbattle {
 			// 
 			this->button1->Location = System::Drawing::Point(45, 89);
 			this->button1->Name = L"button1";
-			this->button1->Size = System::Drawing::Size(75, 23);
+			this->button1->Size = System::Drawing::Size(100, 23);
 			this->button1->TabIndex = 3;
 			this->button1->Text = L"Create field";
 			this->button1->UseVisualStyleBackColor = true;
@@ -125,11 +127,11 @@ namespace shipbattle {
 			// 
 			// button2
 			// 
-			this->button2->Location = System::Drawing::Point(289, 479);
+			this->button2->Location = System::Drawing::Point(448, 89);
 			this->button2->Name = L"button2";
-			this->button2->Size = System::Drawing::Size(75, 23);
+			this->button2->Size = System::Drawing::Size(105, 23);
 			this->button2->TabIndex = 6;
-			this->button2->Text = L"Start game";
+			this->button2->Text = L"Create pc field";
 			this->button2->UseVisualStyleBackColor = true;
 			this->button2->Click += gcnew System::EventHandler(this, &MyForm::button2_Click);
 			// 
@@ -313,7 +315,7 @@ private: void try_select_ship(System::Object^ sender)
 	if(buttons[i] == sender)
 		index_click_button = i;
 
-	if(game_mode == ARRANGE_SHIPS)
+	if(game_mode == ARRANGING_SHIPS)
 	{
 		if(cell_is_empty(index_click_button))
 		{
@@ -325,93 +327,64 @@ private: void try_select_ship(System::Object^ sender)
 	}
 		
 }
-private: void swap(int i, int j)
-{
-	int buff = array_for_random_choice[i];
-	array_for_random_choice[i] = array_for_random_choice[j];
-	array_for_random_choice[j] = buff;
-}
 
-private: void remove_access_to_area_about_pc_ship(int pc_index_ship)
-{
-	//left
-	if(pc_index_ship-1 >= 0 && pc_index_ship%current_pc_height != 0)
-	{
-		swap(pc_index_ship-1,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		//label2->Text = Convert::ToString(array_for_random_choice[4]);
-	}
 
-	//right
-	if(pc_index_ship+1 < current_pc_height*current_pc_height && (pc_index_ship+1)%current_pc_height != 0)
-	{
-		swap(pc_index_ship+1,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		//label2->Text = Convert::ToString(array_for_random_choice[5]);
-	}
-
-	//down
-	if(pc_index_ship+current_pc_height < current_pc_height*current_pc_height)
-	{
-		swap(pc_index_ship+current_pc_height,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		//label2->Text = Convert::ToString(array_for_random_choice[8]);
-	}
-
-	//up
-	if(pc_index_ship-current_pc_height > current_pc_height-1)
-	{
-		swap(pc_index_ship-current_pc_height,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		//label2->Text = Convert::ToString(array_for_random_choice[8]);
-	}
-
-	//up left
-	if(pc_index_ship%current_pc_height != 0 && pc_index_ship > current_pc_height-1)
-	{
-		swap(pc_index_ship-current_pc_height-1,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		//label2->Text = Convert::ToString(array_for_random_choice[8]);
-	}
-	
-	//up right
-	if((pc_index_ship+1)%current_pc_height != 0 && pc_index_ship > current_pc_height-1)
-	{
-		swap(pc_index_ship-current_pc_height+1,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		//label2->Text = Convert::ToString(array_for_random_choice[8]);
-	}
-
-	//down left
-	if((pc_index_ship+1)%current_pc_height != 0 && pc_index_ship > current_pc_height-1)
-	{
-		swap(pc_index_ship-current_pc_height+1,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		//label2->Text = Convert::ToString(array_for_random_choice[8]);
-	}
-
-	//down right
-}
 private: void place_ships_randomly()
 {
-	for(int i=0; i<current_height*current_height; i++)
+	make_free_pc_field();
+	for(int i=0; i<current_pc_height*current_pc_height; i++)
 		array_for_random_choice[i] = i;
 	srand(time(NULL));
 	int quantity_ships = quantity_pc_ships(), pc_index_ship;
-	occupied_cells = 0;
-	for(int i=0; i<quantity_ships;i++)
+	do
 	{
-		pc_index_ship = rand() % (current_height*current_height - occupied_cells);
-		//pc_index_ship = 4;
-		arrange_pc_ship(pc_index_ship);
-		swap(pc_index_ship,current_height*current_height - occupied_cells - 1);
-		occupied_cells++;
-		remove_access_to_area_about_pc_ship(pc_index_ship);
-		//label2->Text = Convert::ToString(array_for_random_choice[4]);
-	}
+		pc_index_ship = rand() % (current_pc_height*current_pc_height - occupied_cells);
+
+		if(field_pc[i_index(pc_index_ship), j_index(pc_index_ship)] == EMPTY_CELL)
+		{
+			arrange_pc_ship(pc_index_ship);
+			remove_access_around_pc_ship(i_index(pc_index_ship),j_index(pc_index_ship));
+			quantity_ships--;
+		}
+	}while(quantity_ships > 0);
 
 }
+private: void remove_access_around_pc_ship(int i, int j)
+{
+	field_pc[i,j] = OCCUPIED_CELL;
+	
+	//up
+	if(i!=0)
+		field_pc[i-1,j] = OCCUPIED_CELL;
+		
+	//down
+	if(i!=current_height-1)
+		field_pc[i+1,j] = OCCUPIED_CELL;
+		
+	//left
+	if(j!=0)
+		field_pc[i,j-1] = OCCUPIED_CELL;
+		
+	//right
+	if(j!=current_height-1)
+		field_pc[i,j+1] = OCCUPIED_CELL;
 
+	//up left
+	if(i!=0 && j!=0)
+		field_pc[i-1,j-1] = OCCUPIED_CELL;
+
+	//up right
+	if(j!=current_height-1 && i!=0)
+		field_pc[i-1,j+1] = OCCUPIED_CELL;
+
+	//down left
+	if(i!=current_height-1 && j!=0)
+		field_pc[i+1,j-1] = OCCUPIED_CELL;
+
+	//dow right
+	if(i!=current_height-1 && j!=current_height-1)
+		field_pc[i+1,j+1] = OCCUPIED_CELL;
+}
 private: void make_free_field()
 {
 	for(int i=0; i<current_height; i++)
@@ -434,26 +407,27 @@ private: void make_free_pc_field()
 	}
 }
 
-private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
-			 delete_old_field(current_height);
-			 current_height = Convert::ToInt32(textBox1->Text);
-			 if(current_height > 10)
-				 current_height = 10;
-			 generation_field(current_height,sender,e);
-			 make_free_field();
-			 game_mode = ARRANGE_SHIPS;
-			 limit_ships = 0;
+private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e)
+{
+	delete_old_field(current_height);
+	current_height = Convert::ToInt32(textBox1->Text);
+	if(current_height > 10)
+		current_height = 10;
+	generation_field(current_height,sender,e);
+	make_free_field();
+	game_mode = ARRANGING_SHIPS;
+	limit_ships = 0;
 }
 
 private: System::Void buttons_Click(System::Object^  sender, System::EventArgs^  e)
 {
-	if(game_mode == ARRANGE_SHIPS)
+	if(game_mode == ARRANGING_SHIPS)
 		try_select_ship(sender);
 }
 
 private: System::Void pc_buttons_Click(System::Object^  sender, System::EventArgs^  e)
 {
-	
+	//стрелять по противнику
 }
 
 private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e)
@@ -462,11 +436,10 @@ private: System::Void button2_Click(System::Object^  sender, System::EventArgs^ 
 	current_pc_height = Convert::ToInt32(textBox1->Text);
 	if(current_pc_height > 10)
 		current_pc_height = 10;
-	
 	generation_pc_field(current_pc_height,sender,e);
-	//make_free_pc_field();
 	place_ships_randomly();
-	//init_first_player();
 }
+
+
 };
 }
