@@ -60,9 +60,8 @@ namespace shipbattle {
 	private: int current_height;
 	private: int current_pc_height;
 	private: int limit_ships;
-	private: int occupied_cells;
 	private: int game_mode;
-	private: System::Windows::Forms::Button^  button2;
+
 
 
 
@@ -88,7 +87,6 @@ namespace shipbattle {
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->label2 = (gcnew System::Windows::Forms::Label());
-			this->button2 = (gcnew System::Windows::Forms::Button());
 			this->SuspendLayout();
 			// 
 			// textBox1
@@ -113,9 +111,9 @@ namespace shipbattle {
 			this->button1->Name = L"button1";
 			this->button1->Size = System::Drawing::Size(100, 23);
 			this->button1->TabIndex = 3;
-			this->button1->Text = L"Create field";
+			this->button1->Text = L"Create fields";
 			this->button1->UseVisualStyleBackColor = true;
-			this->button1->Click += gcnew System::EventHandler(this, &MyForm::button1_Click);
+			this->button1->Click += gcnew System::EventHandler(this, &MyForm::create_fields);
 			// 
 			// label2
 			// 
@@ -125,22 +123,11 @@ namespace shipbattle {
 			this->label2->Size = System::Drawing::Size(0, 13);
 			this->label2->TabIndex = 5;
 			// 
-			// button2
-			// 
-			this->button2->Location = System::Drawing::Point(448, 89);
-			this->button2->Name = L"button2";
-			this->button2->Size = System::Drawing::Size(105, 23);
-			this->button2->TabIndex = 6;
-			this->button2->Text = L"Create pc field";
-			this->button2->UseVisualStyleBackColor = true;
-			this->button2->Click += gcnew System::EventHandler(this, &MyForm::button2_Click);
-			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(838, 514);
-			this->Controls->Add(this->button2);
 			this->Controls->Add(this->label2);
 			this->Controls->Add(this->button1);
 			this->Controls->Add(this->label1);
@@ -159,7 +146,7 @@ private: void delete_old_field(int current_height)
 	{
 		this->Controls->Remove(this->buttons[i]); 
 	}
-
+	current_pc_height = current_height;
 }
 
 private: void delete_old_pc_field(int current_height)
@@ -225,41 +212,43 @@ private: int j_index(int index_click_button)
 	return index_click_button%current_height;
 }
 
-private: void remove_access_to_area_about_ship(int i, int j)
+
+
+private: void remove_access_to_area_about_ship(array<System::Int32, 2> ^arr, int i, int j)
 {
-	field[i,j] = OCCUPIED_CELL;
+	arr[i,j] = OCCUPIED_CELL;
 	
 	//up
 	if(i!=0)
-		field[i-1,j] = OCCUPIED_CELL;
+		arr[i-1,j] = OCCUPIED_CELL;
 		
 	//down
 	if(i!=current_height-1)
-		field[i+1,j] = OCCUPIED_CELL;
+		arr[i+1,j] = OCCUPIED_CELL;
 		
 	//left
 	if(j!=0)
-		field[i,j-1] = OCCUPIED_CELL;
+		arr[i,j-1] = OCCUPIED_CELL;
 		
 	//right
 	if(j!=current_height-1)
-		field[i,j+1] = OCCUPIED_CELL;
+		arr[i,j+1] = OCCUPIED_CELL;
 
 	//up left
 	if(i!=0 && j!=0)
-		field[i-1,j-1] = OCCUPIED_CELL;
+		arr[i-1,j-1] = OCCUPIED_CELL;
 
 	//up right
 	if(j!=current_height-1 && i!=0)
-		field[i-1,j+1] = OCCUPIED_CELL;
+		arr[i-1,j+1] = OCCUPIED_CELL;
 
 	//down left
 	if(i!=current_height-1 && j!=0)
-		field[i+1,j-1] = OCCUPIED_CELL;
+		arr[i+1,j-1] = OCCUPIED_CELL;
 
 	//dow right
 	if(i!=current_height-1 && j!=current_height-1)
-		field[i+1,j+1] = OCCUPIED_CELL;
+		arr[i+1,j+1] = OCCUPIED_CELL;
 
 }
 
@@ -286,7 +275,7 @@ private: void check_limit_ship()
 private: int quantity_pc_ships()
 {
 	int max_ships;
-	switch(current_pc_height)
+	switch(current_height)
 	{
 		case 2: max_ships = 1; break;
 		case 3: max_ships = 1; break;
@@ -321,7 +310,7 @@ private: void try_select_ship(System::Object^ sender)
 		{
 			arrange_ship(index_click_button);
 			limit_ships++;
-			remove_access_to_area_about_ship(i_index(index_click_button),j_index(index_click_button));
+			remove_access_to_area_about_ship(field,i_index(index_click_button),j_index(index_click_button));
 			check_limit_ship();
 		}
 	}
@@ -331,92 +320,83 @@ private: void try_select_ship(System::Object^ sender)
 
 private: void place_ships_randomly()
 {
-	make_free_pc_field();
-	for(int i=0; i<current_pc_height*current_pc_height; i++)
+	make_free(field_pc);
+	for(int i=0; i<current_height*current_height; i++)
 		array_for_random_choice[i] = i;
 	srand(time(NULL));
 	int quantity_ships = quantity_pc_ships(), pc_index_ship;
 	do
 	{
-		pc_index_ship = rand() % (current_pc_height*current_pc_height - occupied_cells);
+		pc_index_ship = rand() % (current_height*current_height);
 
 		if(field_pc[i_index(pc_index_ship), j_index(pc_index_ship)] == EMPTY_CELL)
 		{
-			arrange_pc_ship(pc_index_ship);
-			remove_access_around_pc_ship(i_index(pc_index_ship),j_index(pc_index_ship));
+			//arrange_pc_ship(pc_index_ship);
+			remove_access_to_area_about_ship(field_pc,i_index(pc_index_ship),j_index(pc_index_ship));
 			quantity_ships--;
 		}
 	}while(quantity_ships > 0);
 
+	game_mode = PLAYING;
 }
-private: void remove_access_around_pc_ship(int i, int j)
-{
-	field_pc[i,j] = OCCUPIED_CELL;
-	
-	//up
-	if(i!=0)
-		field_pc[i-1,j] = OCCUPIED_CELL;
-		
-	//down
-	if(i!=current_height-1)
-		field_pc[i+1,j] = OCCUPIED_CELL;
-		
-	//left
-	if(j!=0)
-		field_pc[i,j-1] = OCCUPIED_CELL;
-		
-	//right
-	if(j!=current_height-1)
-		field_pc[i,j+1] = OCCUPIED_CELL;
 
-	//up left
-	if(i!=0 && j!=0)
-		field_pc[i-1,j-1] = OCCUPIED_CELL;
-
-	//up right
-	if(j!=current_height-1 && i!=0)
-		field_pc[i-1,j+1] = OCCUPIED_CELL;
-
-	//down left
-	if(i!=current_height-1 && j!=0)
-		field_pc[i+1,j-1] = OCCUPIED_CELL;
-
-	//dow right
-	if(i!=current_height-1 && j!=current_height-1)
-		field_pc[i+1,j+1] = OCCUPIED_CELL;
-}
-private: void make_free_field()
+private: void make_free(array<System::Int32, 2> ^arr)
 {
 	for(int i=0; i<current_height; i++)
 	{
 		for(int j=0; j<current_height; j++)
 		{
-			field[i,j] = EMPTY_CELL;
+			arr[i,j] = EMPTY_CELL;
 		}
 	}
 }
 
-private: void make_free_pc_field()
+
+
+private: void try_shoot(System::Object^ sender)
 {
-	for(int i=0; i<current_height; i++)
+	if(game_mode == PLAYING)
 	{
-		for(int j=0; j<current_height; j++)
+		//label1->Text = "Sfsdf";
+		int index_click_button;
+		for(int i=0; i<current_height*current_height; i++)
 		{
-			field_pc[i,j] = EMPTY_CELL;
+			if(pc_buttons[i] == sender)
+				index_click_button = i;
 		}
+
+		if(field_pc[i_index(index_click_button), j_index(index_click_button)] == OCCUPIED_CELL)
+			//arrange_pc_ship(index_click_button);
+				label1->Text = "Sfsdf";
+
 	}
 }
 
-private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e)
+private: System::Void create_fields(System::Object^  sender, System::EventArgs^  e)
 {
 	delete_old_field(current_height);
-	current_height = Convert::ToInt32(textBox1->Text);
-	if(current_height > 10)
-		current_height = 10;
+	if(textBox1->Text == "")
+		current_height = 2;
+	else
+	{
+		current_height = Convert::ToInt32(textBox1->Text);
+		if(current_height > 10)
+			current_height = 10;
+		else if(current_height == 0 || current_height == 1)
+			current_height = 2;
+	}
+
+	delete_old_pc_field(current_pc_height);
+	generation_pc_field(current_height,sender,e);
+	place_ships_randomly();
+
 	generation_field(current_height,sender,e);
-	make_free_field();
+	make_free(field);
 	game_mode = ARRANGING_SHIPS;
 	limit_ships = 0;
+
+	
+	
 }
 
 private: System::Void buttons_Click(System::Object^  sender, System::EventArgs^  e)
@@ -427,17 +407,7 @@ private: System::Void buttons_Click(System::Object^  sender, System::EventArgs^ 
 
 private: System::Void pc_buttons_Click(System::Object^  sender, System::EventArgs^  e)
 {
-	//стрелять по противнику
-}
-
-private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e)
-{
-	delete_old_pc_field(current_pc_height);
-	current_pc_height = Convert::ToInt32(textBox1->Text);
-	if(current_pc_height > 10)
-		current_pc_height = 10;
-	generation_pc_field(current_pc_height,sender,e);
-	place_ships_randomly();
+	//try_shoot(sender);
 }
 
 
