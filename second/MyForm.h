@@ -1,15 +1,17 @@
 #pragma once
 #include <stdlib.h> 
 #include <ctime> 
-const int NOT_PLAING = 0;
-const int PLAYING = 1;
+
+const int INIT = 0;
+const int ARRANGING = 1;
+const int PLAYING = 2;
+const int END_GAME = 3;
+const int ALL_SHIPS_EXIST = 4;
 const int EMPTY_CELL = 1;
 const int OCCUPIED_CELL = 0;
 const int CELL_NEAR_SHIP = 2, MISS = 2;
 const int HUMAN_FIRST_STEP = 0;
 const int AI_FIRST_STEP = 1;
-const bool YES = true;
-const bool NO = false;
 
 namespace shipbattle {
 
@@ -30,16 +32,13 @@ namespace shipbattle {
 		{
 			InitializeComponent();
 			this->current_height = 0;
-			this->is_game_over = NO;
 			this->current_pc_height = 0;
 			this->field = gcnew array<int, 2>(10, 10);
 			this->field_for_ai_shoot = gcnew array<int, 2>(10, 10);
 			this->field_pc = gcnew array<int, 2>(10, 10);
 			this->array_for_random_choice = gcnew array<int>(100);
 			this->limit_ships = 0;
-			this->game_mode = NOT_PLAING;
-			this->all_ships_exist = NO;
-			//this->field = gcnew array<int>;
+			this->game_mode = INIT;
 			//
 			//TODO: добавьте код конструктора
 			//
@@ -61,6 +60,7 @@ namespace shipbattle {
 	private: System::Windows::Forms::Label^  label1;
 	private: System::Windows::Forms::Button^  button1;
 	private: System::Windows::Forms::Label^  label2;
+	private: System::Windows::Forms::Label^  label3;
 	private: static array<System::Windows::Forms::Button^>^buttons;
 	private: static array<System::Windows::Forms::Button^>^pc_buttons;
 	private: array<int, 2>^ field;
@@ -76,8 +76,7 @@ namespace shipbattle {
 	private: int game_mode;
 	private: int first_step;
 	private: bool all_ships_exist;
-	private: System::Windows::Forms::Button^  button2;
-	private: System::Windows::Forms::Label^  label3;
+	
 
 
 
@@ -104,7 +103,6 @@ namespace shipbattle {
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->label2 = (gcnew System::Windows::Forms::Label());
-			this->button2 = (gcnew System::Windows::Forms::Button());
 			this->label3 = (gcnew System::Windows::Forms::Label());
 			this->SuspendLayout();
 			// 
@@ -120,7 +118,7 @@ namespace shipbattle {
 			this->label1->AutoSize = true;
 			this->label1->Location = System::Drawing::Point(42, 23);
 			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(61, 13);
+			this->label1->Size = System::Drawing::Size(278, 13);
 			this->label1->TabIndex = 2;
 			this->label1->Text = L"The size of the field for playing only with single-deck ships";
 			// 
@@ -130,7 +128,7 @@ namespace shipbattle {
 			this->button1->Name = L"button1";
 			this->button1->Size = System::Drawing::Size(100, 23);
 			this->button1->TabIndex = 3;
-			this->button1->Text = L"Create fields";
+			this->button1->Text = L"Start game";
 			this->button1->UseVisualStyleBackColor = true;
 			this->button1->Click += gcnew System::EventHandler(this, &MyForm::create_fields);
 			// 
@@ -142,24 +140,13 @@ namespace shipbattle {
 			this->label2->Size = System::Drawing::Size(0, 13);
 			this->label2->TabIndex = 5;
 			// 
-			// button2
-			// 
-			this->button2->Location = System::Drawing::Point(45, 463);
-			this->button2->Name = L"button2";
-			this->button2->Size = System::Drawing::Size(100, 23);
-			this->button2->TabIndex = 6;
-			this->button2->Text = L"Start game";
-			this->button2->UseVisualStyleBackColor = true;
-			this->button2->Click += gcnew System::EventHandler(this, &MyForm::start_game);
-			// 
 			// label3
 			// 
 			this->label3->AutoSize = true;
 			this->label3->Location = System::Drawing::Point(577, 473);
 			this->label3->Name = L"label3";
-			this->label3->Size = System::Drawing::Size(35, 13);
+			this->label3->Size = System::Drawing::Size(0, 13);
 			this->label3->TabIndex = 7;
-			this->label3->Text = L"";
 			// 
 			// MyForm
 			// 
@@ -167,7 +154,6 @@ namespace shipbattle {
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(838, 514);
 			this->Controls->Add(this->label3);
-			this->Controls->Add(this->button2);
 			this->Controls->Add(this->label2);
 			this->Controls->Add(this->button1);
 			this->Controls->Add(this->label1);
@@ -330,7 +316,8 @@ private: void check_limit_ship()
 	}
 
 	if(limit_ships == max_ships) 
-		all_ships_exist = YES;
+		game_mode = ALL_SHIPS_EXIST;
+		
 		
 }
 
@@ -367,7 +354,7 @@ private: void try_place_ship(System::Object^ sender)
 	if(buttons[i] == sender)
 		index_click_button = i;
 
-	if(all_ships_exist == false)
+	if(game_mode == ARRANGING)
 	{
 		if(cell_is_empty(index_click_button))
 		{
@@ -382,12 +369,13 @@ private: void try_place_ship(System::Object^ sender)
 private: void ai_make_shoot()
 {
 	int index_ship;
+	int marker = 0;
 	do
 	{
-		 index_ship = rand() % (current_height*current_height);
-
+		index_ship = rand() % (current_height*current_height);
 		if(field_for_ai_shoot[i_index(index_ship), j_index(index_ship)] == EMPTY_CELL)
 		{
+			
 			if(field[i_index(index_ship), j_index(index_ship)] == OCCUPIED_CELL)
 			{
 				sink_ship(buttons,index_ship);
@@ -399,9 +387,10 @@ private: void ai_make_shoot()
 				past(buttons,index_ship);
 				field_for_ai_shoot[i_index(index_ship),j_index(index_ship)] = MISS;
 			}
+			marker = 1;
 		}
-	}while(field_for_ai_shoot[i_index(index_ship), j_index(index_ship)] == EMPTY_CELL);
-
+	//}while(field_for_ai_shoot[i_index(index_ship), j_index(index_ship)] == OCCUPIED_CELL || field_for_ai_shoot[i_index(index_ship), j_index(index_ship)] == CELL_NEAR_SHIP);
+	}while(marker == 0);
 	
 }
 
@@ -426,13 +415,12 @@ private: void place_ships_randomly()
 
 private: void stop_game()
 {
-	is_game_over = YES;
-	game_mode = NOT_PLAING;
+	game_mode = END_GAME;
 }
 
 private: void check_win()
 {
-	if ( counter_killed_by_ai_ships == quantity_pc_ships())
+	if (counter_killed_by_ai_ships == quantity_pc_ships())
 	{
 		label3->Text = "WIN AI";
 		stop_game();
@@ -465,7 +453,7 @@ private: bool still_none_won()
 
 private: void try_shoot(System::Object^ sender)
 {
-	if(game_mode == PLAYING && is_game_over == NO)
+	if(game_mode == PLAYING)
 	{
 		int index_click_button;
 		for(int i=0; i<current_height*current_height; i++)
@@ -490,49 +478,63 @@ private: void try_shoot(System::Object^ sender)
 			check_win();
 		}
 	}
-	else if(all_ships_exist && is_game_over == YES)
+	else if(game_mode == ARRANGING)
 	{
-		label3->Text = "Click 'Create field'";
+		label3->Text = "Please, arrange all your ships!";
 	}
-	else if(all_ships_exist)
+	else if(game_mode == ALL_SHIPS_EXIST)
 	{
 		label3->Text = "Click 'Start game'";
 	}
-	else
-	{
-		label3->Text = "Please, arrange all you ships!";
-	}
+	
+	
 }
 
-private: void set_to_zero_modes()
+private: void set_to_mode(int mode)
 {
 	label3->Text = "";
-	all_ships_exist = NO;
-	is_game_over = NO;
-	game_mode = NOT_PLAING;
-	
+	game_mode = mode;
 }
 
 private: System::Void create_fields(System::Object^  sender, System::EventArgs^  e)
 {
+	
 
-	set_to_zero_modes();
+	if(game_mode == INIT || game_mode == END_GAME || game_mode == PLAYING)
+	{
+		set_to_mode(ARRANGING);
+		delete_old_field(current_height);
+		find_out_current_height();
+		delete_old_pc_field(current_pc_height);
+		generation_pc_field(current_height,sender,e);
+		make_free(field_pc);
+		place_ships_randomly();
+		generation_field(current_height,sender,e);
+		make_free(field);	
+	}
+	else if (game_mode == ALL_SHIPS_EXIST)
+	{
+		
+		init_first_player();
+		counter_killed_by_ai_ships = 0;
+		counter_killed_by_you_ships = 0;
+		make_free(field_for_ai_shoot);
+		set_to_mode(PLAYING);
 
-	delete_old_field(current_height);
-	find_out_current_height();
-	delete_old_pc_field(current_pc_height);
-	generation_pc_field(current_height,sender,e);
-	make_free(field_pc);
-	place_ships_randomly();
-	generation_field(current_height,sender,e);
-	make_free(field);	
-
+		if(first_step == AI_FIRST_STEP)
+			ai_make_shoot();	
+		
+	}
+	else if (game_mode == ARRANGING)
+	{
+		label3->Text = "Please, arrange all your ships!";
+	}
 }
 
 
 private: System::Void buttons_Click(System::Object^  sender, System::EventArgs^  e)
 {	
-	if(all_ships_exist == false)
+	if(game_mode == ARRANGING)
 		try_place_ship(sender);
 }
 
@@ -541,30 +543,5 @@ private: System::Void pc_buttons_Click(System::Object^  sender, System::EventArg
 		try_shoot(sender);
 }
 
-private: System::Void start_game(System::Object^  sender, System::EventArgs^  e) 
-{
-
-	label3->Text = "";
-	if(all_ships_exist == YES)
-	{
-		init_first_player();
-		counter_killed_by_ai_ships = 0;
-		counter_killed_by_you_ships = 0;
-		make_free(field_for_ai_shoot);
-		game_mode = PLAYING;
-
-		if(first_step == AI_FIRST_STEP)
-			ai_make_shoot();	
-	}
-	else if(is_game_over == YES)
-	{
-		label3->Text = "Click 'Create fields'";
-	}
-	else
-	{
-		label3->Text = "Please, arrange all your ships!";
-	}
-		
-}
 };
 }
