@@ -24,7 +24,7 @@ namespace shipbattle {
 	using namespace System::Drawing;
 
 	/// <summary>
-	/// Сводка для MyForm
+	/// Г‘ГўГ®Г¤ГЄГ  Г¤Г«Гї MyForm
 	/// </summary>
 	public ref class MyForm : public System::Windows::Forms::Form
 	{
@@ -41,13 +41,13 @@ namespace shipbattle {
 			this->quantity_ships = 0;
 			this->game_mode = ARRANGING;
 			//
-			//TODO: добавьте код конструктора
+			//TODO: Г¤Г®ГЎГ ГўГјГІГҐ ГЄГ®Г¤ ГЄГ®Г­Г±ГІГ°ГіГЄГІГ®Г°Г 
 			//
 		}
 
 	protected:
 		/// <summary>
-		/// Освободить все используемые ресурсы.
+		/// ГЋГ±ГўГ®ГЎГ®Г¤ГЁГІГј ГўГ±ГҐ ГЁГ±ГЇГ®Г«ГјГ§ГіГҐГ¬Г»ГҐ Г°ГҐГ±ГіГ°Г±Г».
 		/// </summary>
 		~MyForm()
 		{
@@ -65,6 +65,7 @@ namespace shipbattle {
 	private: array<int, 2>^ field;
 	private: array<int, 2>^ field_pc; 
 	private: array<int, 2>^ field_for_ai_shoot; 
+	private: int last_ai_shot, last_player_shot = 0;
 	private: int quantity_ships;
 	private: int counter_of_decks;
 	private: int counter_killed_by_you_ships; 
@@ -76,14 +77,14 @@ namespace shipbattle {
 
 	private:
 		/// <summary>
-		/// Требуется переменная конструктора.
+		/// Г’Г°ГҐГЎГіГҐГІГ±Гї ГЇГҐГ°ГҐГ¬ГҐГ­Г­Г Гї ГЄГ®Г­Г±ГІГ°ГіГЄГІГ®Г°Г .
 		/// </summary>
 		System::ComponentModel::Container ^components;
 
 #pragma region Windows Form Designer generated code
 		/// <summary>
-		/// Обязательный метод для поддержки конструктора - не изменяйте
-		/// содержимое данного метода при помощи редактора кода.
+		/// ГЋГЎГїГ§Г ГІГҐГ«ГјГ­Г»Г© Г¬ГҐГІГ®Г¤ Г¤Г«Гї ГЇГ®Г¤Г¤ГҐГ°Г¦ГЄГЁ ГЄГ®Г­Г±ГІГ°ГіГЄГІГ®Г°Г  - Г­ГҐ ГЁГ§Г¬ГҐГ­ГїГ©ГІГҐ
+		/// Г±Г®Г¤ГҐГ°Г¦ГЁГ¬Г®ГҐ Г¤Г Г­Г­Г®ГЈГ® Г¬ГҐГІГ®Г¤Г  ГЇГ°ГЁ ГЇГ®Г¬Г®Г№ГЁ Г°ГҐГ¤Г ГЄГІГ®Г°Г  ГЄГ®Г¤Г .
 		/// </summary>
 		void InitializeComponent(void)
 		{
@@ -638,7 +639,7 @@ private: void try_shot(System::Object^ sender)
 	if(game_mode == PLAYING)
 	{
 		int index = convert_sender_to_index(sender, pc_buttons);
-
+		update_last_shot(index, false);
 		if(field_pc[i_index(index), j_index(index)] == OCCUPIED_CELL)
 		{
 			damaged_ship(pc_buttons,index);
@@ -681,6 +682,7 @@ private: void ai_make_shot()
 			if(field_for_ai_shoot[i_index(index), j_index(index)] == EMPTY_CELL)
 			{
 				counter++;
+				update_last_shot(index, true);
 				if(field[i_index(index), j_index(index)] == OCCUPIED_CELL)
 				{
 					if(is_ship_sunken_full(field,i_index(index), j_index(index), nullptr))
@@ -818,6 +820,7 @@ private: void make_shoot_near_injured_ship()
 			index = rand() % 100;
 			if(field_for_ai_shoot[i_index(index), j_index(index)] == EMPTY_CELL && is_near_injured_ship(index))
 			{
+				update_last_shot(index, true);
 				if(field[i_index(index), j_index(index)] == OCCUPIED_CELL)
 				{
 					if(is_ship_sunken_full(field,i_index(index), j_index(index), nullptr))
@@ -890,6 +893,23 @@ private: void damaged_ship(array<System::Windows::Forms::Button^> ^arr, int i)
 private: void past(array<System::Windows::Forms::Button^> ^arr, int i)
 {
 	arr[i]->Text = "-";
+}
+private: void update_last_shot(int i, bool enemy)
+{
+	if (enemy) {
+		change_button_style(buttons[last_ai_shot], FontStyle::Regular);
+		last_ai_shot = i;
+		change_button_style(buttons[last_ai_shot], FontStyle::Bold);
+	}
+	else {
+		change_button_style(pc_buttons[last_player_shot], FontStyle::Regular);
+		last_player_shot = i;
+		change_button_style(pc_buttons[last_player_shot], FontStyle::Bold);
+	}
+}
+private: void change_button_style(System::Windows::Forms::Button^ button, FontStyle style)
+{
+	button->Font = gcnew System::Drawing::Font(button->Font->FontFamily, button->Font->Size, style);
 }
 private: int i_index(int index_click_button)
 {
